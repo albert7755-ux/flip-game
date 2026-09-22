@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>輝達債條件翻翻樂</title>
+<title>債速配 Bond Match 排位賽</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700&family=Noto+Sans+TC:wght@400;500;700&family=JetBrains+Mono:wght@500;700&display=swap">
@@ -35,7 +35,9 @@
     display:flex;flex-direction:column;gap:16px;}
 
   .eyebrow{font-size:11px;letter-spacing:.2em;color:var(--brass);font-weight:700;margin:0 0 2px;}
-  h1{font-family:"Noto Serif TC",serif;font-weight:700;font-size:clamp(24px,5vw,31px);margin:0;letter-spacing:.03em;}
+  h1{font-family:"Noto Serif TC",serif;font-weight:700;font-size:clamp(28px,6.4vw,40px);margin:0;letter-spacing:.06em;}
+  h1 .en2{display:block;font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:700;
+    font-size:clamp(11px,2.6vw,13px);letter-spacing:.34em;color:var(--brass);margin-top:7px;}
   .tagline{color:var(--ink-soft);font-size:13.5px;margin:4px 0 0;}
 
   .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);
@@ -135,9 +137,9 @@
 <body>
 <div class="wrap">
   <header>
-    <p class="eyebrow">商品條件記憶</p>
-    <h1>輝達公司債 11</h1>
-    <p class="tagline">翻開「條件」和對應的「數值」湊成一組 — 四組全配對完成就過關</p>
+    <p class="eyebrow">排位賽</p>
+    <h1>債速配<span class="en2">BOND MATCH</span></h1>
+    <p class="tagline">翻開「條件」和對應的「數值」湊成一組，四組全對就過關。步數越少、時間越短，排名越前面。</p>
   </header>
 
   <div class="stats">
@@ -213,7 +215,7 @@
   var PAIRS = [
     {
       id: "code",
-      q: { txt: "輝達公司債 11", en: "NVIDIA CORP" },
+      q: { txt: "商品代號", en: "BOND CODE" },
       a: { txt: "WMBB26070003", long: true },
       sheet: { lab: "商品代號", val: "WMBB26070003", mono: true,
                why: "下單時輸入的商品代號，前綴 WMBB 為信託複委託債券。" }
@@ -441,19 +443,39 @@
     return h;
   }
 
+  // 把 Supabase 回來的錯誤翻成看得懂的話
+  function sbError(status, body) {
+    var txt = String(body || ""), msg;
+    if (status === 404 || txt.indexOf("does not exist") !== -1 || txt.indexOf("PGRST205") !== -1) {
+      msg = "找不到資料表 flip_scores，請回 Supabase 的 SQL Editor 把建表指令再跑一次";
+    } else if (status === 401) {
+      msg = "金鑰不正確，請檢查 Secrets 的 SUPABASE_ANON_KEY";
+    } else if (status === 403) {
+      msg = "權限被擋，請確認建表指令裡兩個 policy 有建立成功";
+    } else if (status === 400) {
+      msg = "資料被資料庫擋下（名字太長或數值超出範圍）";
+    } else {
+      msg = "HTTP " + status;
+    }
+    var e = new Error(msg);
+    e.detail = txt.slice(0, 300);
+    return e;
+  }
+
   function submitScore(name, moves, seconds) {
     fetch(SB_URL + "/rest/v1/flip_scores", {
       method: "POST",
       headers: sbHeaders({ "Content-Type": "application/json", "Prefer": "return=minimal" }),
       body: JSON.stringify({ board: BOARD_ID, name: name, moves: moves, seconds: seconds })
     }).then(function (res) {
-      if (!res.ok) throw new Error("http " + res.status);
+      if (!res.ok) return res.text().then(function (t) { throw sbError(res.status, t); });
       el.winNote.className = "note ok";
       el.winNote.textContent = "成績已上排行榜 ✓";
       loadBoard();
-    }).catch(function () {
+    }).catch(function (e) {
       el.winNote.className = "note err";
-      el.winNote.textContent = "成績沒送出去，檢查一下網路再打一輪。";
+      el.winNote.textContent = "成績沒送出去：" + (e && e.message ? e.message : "連不上資料庫");
+      if (e && e.detail) console.error("Supabase:", e.detail);
     });
   }
 
@@ -469,7 +491,10 @@
             + "&order=moves.asc,seconds.asc"
             + "&limit=400";
     fetch(url, { headers: sbHeaders() })
-      .then(function (res) { if (!res.ok) throw new Error("http " + res.status); return res.json(); })
+      .then(function (res) {
+        if (!res.ok) return res.text().then(function (t) { throw sbError(res.status, t); });
+        return res.json();
+      })
       .then(function (data) {
         // 同一個名字只留最好的一筆
         var seen = {}, out = [];
@@ -483,7 +508,10 @@
         renderBoard();
         el.lbStatus.textContent = "更新於 " + new Date().toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
       })
-      .catch(function () { el.lbStatus.textContent = "排行榜讀取失敗，稍後再試"; });
+      .catch(function (e) {
+        el.lbStatus.textContent = "排行榜讀取失敗：" + (e && e.message ? e.message : "連不上資料庫");
+        if (e && e.detail) console.error("Supabase:", e.detail);
+      });
   }
 
   function renderBoard() {
