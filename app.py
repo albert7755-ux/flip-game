@@ -1,5 +1,5 @@
 """
-輝達債條件翻翻樂 — Streamlit 外殼
+債速配-Bond Match 排位賽 — Streamlit 外殼
 
 這支程式只做三件事：
   1. 讀取同資料夾的 game.html
