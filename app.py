@@ -1,5 +1,5 @@
 """
-債速配-Bond Match 排位賽 — Streamlit 外殼
+債速配 Bond Match 排位賽 — Streamlit 外殼
 
 這支程式只做三件事：
   1. 讀取同資料夾的 game.html
@@ -15,7 +15,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 # ---------------------------------------------------------------- 基本設定
-PAGE_TITLE = "輝達債條件翻翻樂"
+PAGE_TITLE = "債速配 Bond Match 排位賽"
 
 # 遊戲畫面高度（像素）。內容被切到就把這個數字調大，
 # 下面留太多空白就調小。
