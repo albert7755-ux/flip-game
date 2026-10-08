@@ -17,7 +17,8 @@ import streamlit.components.v1 as components
 PAGE_TITLE = "固收七人組 Team Match"
 
 # 遊戲畫面高度（像素）。內容被切到就調大，下面空白太多就調小。
-FRAME_HEIGHT = 1500
+# 1900 是「七組全對、結語合照展開」之後的高度；還沒解鎖前下面會有一段空白，正常。
+FRAME_HEIGHT = 1900
 
 st.set_page_config(
     page_title=PAGE_TITLE,
