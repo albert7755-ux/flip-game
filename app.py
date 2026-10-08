@@ -1,12 +1,12 @@
 """
-債速配 Bond Match 排位賽 — Streamlit 外殼
+固收七人組 Team Match — Streamlit 外殼
 
-這支程式只做三件事：
-  1. 讀取同資料夾的 game.html
-  2. 把 Supabase 的網址和金鑰填進去
-  3. 把整個遊戲畫面顯示出來
+跟「債速配」是同一套做法：這支程式只負責把 game.html 顯示出來，
+並把 Supabase 的網址和金鑰填進去。遊戲本體在 game.html。
 
-遊戲本體和排行榜邏輯都在 game.html 裡面，要改遊戲內容改那一支就好。
+排行榜用的是同一張 flip_scores 資料表，但 BOARD_ID 不同
+（game.html 裡是 "fi-team-7"），所以成績跟債速配分開算，
+Supabase 不用重新建表。
 """
 
 from pathlib import Path
@@ -14,12 +14,10 @@ from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
 
-# ---------------------------------------------------------------- 基本設定
-PAGE_TITLE = "債速配 Bond Match 排位賽"
+PAGE_TITLE = "固收七人組 Team Match"
 
-# 遊戲畫面高度（像素）。內容被切到就把這個數字調大，
-# 下面留太多空白就調小。
-FRAME_HEIGHT = 1750
+# 遊戲畫面高度（像素）。內容被切到就調大，下面空白太多就調小。
+FRAME_HEIGHT = 1500
 
 st.set_page_config(
     page_title=PAGE_TITLE,
@@ -28,7 +26,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# 把 Streamlit 預設的上下留白和頁首頁尾收掉，讓遊戲貼齊畫面
 st.markdown(
     """
     <style>
@@ -42,7 +39,6 @@ st.markdown(
 )
 
 
-# ---------------------------------------------------------------- 讀設定
 def get_secret(key: str) -> str:
     """從 secrets.toml 讀一個值，沒設定就回空字串（遊戲仍可單機玩）。"""
     try:
@@ -55,11 +51,9 @@ SUPABASE_URL = get_secret("SUPABASE_URL").rstrip("/")
 SUPABASE_ANON_KEY = get_secret("SUPABASE_ANON_KEY")
 
 
-# ---------------------------------------------------------------- 讀遊戲
 @st.cache_data(show_spinner=False)
 def load_template() -> str:
-    path = Path(__file__).parent / "game.html"
-    return path.read_text(encoding="utf-8")
+    return (Path(__file__).parent / "game.html").read_text(encoding="utf-8")
 
 
 try:
