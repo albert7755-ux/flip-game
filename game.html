@@ -282,7 +282,6 @@
 
   var LS_NAME = "team.name";
   var LS_BEST = "team.best";
-  var LS_FINALE = "team.finale";
 
   var el = {};
   ["moves","clock","best","board","win","winScore","winNote","again","restart","sound",
@@ -391,6 +390,7 @@
     state.elapsed = 0; state.busy = false; state.startedAt = 0;
     el.moves.textContent = "0"; el.clock.textContent = "0:00";
     el.win.hidden = true; el.winNote.textContent = ""; el.winNote.className = "note";
+    lockFinale();
 
     var slots = [];
     PEOPLE.forEach(function (p) { slots.push({ p: p, kind: "q" }); slots.push({ p: p, kind: "a" }); });
@@ -478,13 +478,18 @@
     closeGate();
   }
 
-  // 七組全對後解鎖結語；看過一次就永久保留
-  function unlockFinale(animate) {
+  // 七組全對才解鎖結語；每開新的一局就鎖回去，不劇透
+  function unlockFinale() {
     if (!el.finale.hidden) return;
     el.groupshot.src = GROUP_PHOTO;
     el.finale.hidden = false;
-    if (animate) el.finale.classList.add("reveal");
-    lsSet(LS_FINALE, true);
+    el.finale.classList.add("reveal");
+  }
+
+  function lockFinale() {
+    el.finale.hidden = true;
+    el.finale.classList.remove("reveal");
+    el.groupshot.removeAttribute("src");
   }
 
   function better(a, b) {
@@ -496,7 +501,7 @@
 
   function finish() {
     stopTimer(); tick();
-    unlockFinale(true);
+    unlockFinale();
     var run = { moves: state.moves, time: state.elapsed };
     el.winScore.textContent = run.moves + " 步 · " + fmt(run.time);
     el.win.hidden = false;
@@ -630,7 +635,6 @@
   el.whoAmI.textContent = state.myName || "—";
   var b = lsGet(LS_BEST, null);
   if (b && typeof b.moves === "number") state.myBest = b;
-  if (lsGet(LS_FINALE, false)) unlockFinale(false);
 
   deal();
   if (!state.myName) openGate(false);
