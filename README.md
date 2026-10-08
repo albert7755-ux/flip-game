@@ -1,132 +1,96 @@
-[README (5).md](https://github.com/user-attachments/files/32497306/README.5.md)
-# 債速配 Bond Match 排位賽
+[README (7).md](https://github.com/user-attachments/files/33191480/README.7.md)
+# 固收七人組 Team Match
 
-債券條件配對小遊戲，任何人開網址就能玩、輸入名字就上共同排行榜，**不需要註冊任何帳號**。
-
----
-
-## 檔案有哪些
-
-| 檔案 | 做什麼的 | 你會不會需要改 |
-|---|---|---|
-| `app.py` | Streamlit 外殼，負責把遊戲顯示出來 | 幾乎不用 |
-| `game.html` | 遊戲本體（牌面、條件、排行榜） | 換債券時改這支 |
-| `schema.sql` | Supabase 建表用的指令 | 只跑一次 |
-| `requirements.txt` | 要安裝的套件 | 不用 |
-
-照片已經包在 `game.html` 裡面了，不用另外放圖檔。
+認人翻牌遊戲：14 張牌、7 組，翻開名字再翻出本人就配成一對。任何人開網址就能玩，輸入名字就上共同排行榜。
 
 ---
 
-## 部署步驟
+## 檔案
 
-整個流程大概 15 分鐘，分成三段：先開資料庫、再上傳程式、最後把兩邊接起來。
+| 檔案 | 做什麼的 |
+|---|---|
+| `app.py` | Streamlit 外殼 |
+| `game.html` | 遊戲本體（名字、照片、排行榜） |
+| `requirements.txt` | 要安裝的套件 |
 
-### 第一段：開 Supabase 資料庫（放排行榜的地方）
+七張照片已經包在 `game.html` 裡，不用另外放圖檔。
 
-1. 到 [supabase.com](https://supabase.com) 登入，點 **New project**
-2. 專案名稱隨便取，密碼記下來（其實後面用不到），地區選 **Northeast Asia (Tokyo)** 比較快
-3. 等它建好（約 2 分鐘）
-4. 左邊選單點 **SQL Editor** → **New query**
-5. 把 `schema.sql` **整份貼進去** → 按右下角 **Run**
-6. 看到綠色的 `Success` 就成功了
+---
 
-接著把連線資訊抄下來：
+## 部署
 
-7. 左下角 **Project Settings**（齒輪）→ **API**
-8. 抄兩個東西：
-   - **Project URL**：長得像 `https://abcdefgh.supabase.co`
-   - **Project API keys** 底下的 **`anon` `public`** 那一把：很長一串 `eyJ...`
+比「債速配」簡單，因為 **Supabase 不用重做** —— 用同一個專案、同一張 `flip_scores` 表就好。
 
-> ⚠️ 只抄 `anon public` 那一把。旁邊還有一把 `service_role`，那把是管理員金鑰，**絕對不要**放進程式裡。
-
-### 第二段：把程式放上 GitHub
-
-1. 在 GitHub 開一個新的 repository，例如 `nvda-flip`
-2. 把這四個檔案上傳進去：`app.py`、`game.html`、`requirements.txt`、`schema.sql`
-   （不熟 git 的話，GitHub 網頁上 **Add file → Upload files** 直接拖進去就好）
-
-### 第三段：部署到 Streamlit Cloud 並接上資料庫
-
-1. 到 [share.streamlit.io](https://share.streamlit.io) → **New app**
-2. 選剛剛那個 repository，Main file path 填 `app.py` → **Deploy**
-3. 部署完成後，右下角 **⋮ → Settings → Secrets**
-4. 貼上這兩行，把值換成你第一段抄的：
+1. GitHub 開一個新的 repository，例如 `team-match`
+2. 把 `app.py`、`game.html`、`requirements.txt` 三個檔案上傳進去
+3. [share.streamlit.io](https://share.streamlit.io) → **New app** → 選這個 repo，Main file path 填 `app.py` → **Deploy**
+4. 部署完 → **⋮ → Settings → Secrets**，貼上跟債速配**一模一樣**的那兩行：
 
 ```toml
 SUPABASE_URL = "https://你的專案代號.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOi...（很長一串）"
 ```
 
-5. 按 **Save**，App 會自己重開
-6. 重開後打一輪、填名字，排行榜出現你的名字就成功了
+5. 存檔，等 App 重開，打一輪試試看
 
-網址直接發給同事，他們點開就能玩。
+排行榜用 `BOARD_ID = "fi-team-7"`，跟債速配的 `nvda-bond-11` 分開算，兩邊成績不會混在一起。
 
 ---
 
-## 平常怎麼維護
+## 先在自己電腦看看
 
-### 換成另一檔債券
+不想先部署也可以：把 `game.html` 下載下來，**直接點兩下**用瀏覽器打開就能玩。
+照片、配對、計時、成員名單都正常，只有排行榜會顯示讀取失敗（因為沒接上資料庫）。
 
-打開 `game.html`，找到這兩個地方（都在 `<script>` 開頭附近，有註解標示）：
+---
 
-**① 排行榜代號** — 換一檔債就換一個 id，排行榜才不會混在一起：
+## 平常怎麼改
 
-```javascript
-var BOARD_ID = "nvda-bond-11";        // 改成例如 "msft-bond-03"
-```
+### 改名字或換照片
 
-**② 四組條件** — `PAIRS` 這一段就是牌面內容（頁面標題固定是「債速配」，不會透露是哪一檔債）：
-
-```javascript
-q:     綠色題目卡（txt 是大字，en 是底下的小字，可以不填）
-a:     白色答案卡（txt 是數值；long: true 給比較長的代號用，字會自動縮小）
-sheet: 下面「條件速覽」那一區的說明文字
-```
-
-順序不用管，程式會自己洗牌。
-
-### 換照片
-
-照片是用 base64 直接寫在 `game.html` 裡的，找到這一行：
+`game.html` 裡找到 `PEOPLE` 這一段（`<script>` 開頭附近，有註解標示）：
 
 ```javascript
-var PHOTO = "data:image/jpeg;base64,/9j/4AAQ....";
+{ id: "p1", zh: "惟恂", en: "VALERIE", photo: "data:image/jpeg;base64,/9j/..." }
 ```
 
-要換照片的話跟 Claude 說一聲，把新照片給它，它會幫你轉好這一行給你貼。
+- `zh` 是牌面上的大字
+- `en` 是底下的小字
+- `photo` 是照片，很長一串 base64
+
+改名字直接改 `zh` / `en` 就好。換照片的話把新照片給 Claude，它會轉好整行給你貼。
+
+### 加人或減人
+
+照上面的格式增減一列就好，`id` 不要重複。牌數會自動跟著變（人數 × 2），版面也會自己排。
+
+### 加職稱或負責業務
+
+目前「成員名單」只顯示名字。想加職稱和負責業務，把內容給 Claude，它幫你加欄位。
 
 ### 清掉排行榜
 
-Supabase → **Table Editor** → `flip_scores` → 勾選要刪的列 → 刪除。
-或在 SQL Editor 跑：
+Supabase → SQL Editor：
 
 ```sql
-delete from public.flip_scores where board = 'nvda-bond-11';
+delete from public.flip_scores where board = 'fi-team-7';
 ```
 
 ---
 
 ## 常見狀況
 
-**排行榜一直空的，但自己打完有成績**
-Secrets 沒設定好。回 Streamlit 的 Settings → Secrets 檢查那兩行，注意值要用雙引號包起來。
+**畫面被切掉 / 下面一大片空白**
+`app.py` 裡的 `FRAME_HEIGHT = 1500`，被切到就調大，空太多就調小。
 
-**畫面下面被切掉 / 上面留一大片空白**
-`app.py` 裡的 `FRAME_HEIGHT = 1750`，被切到就調大，空太多就調小。
+**排行榜讀取失敗**
+錯誤訊息會直接寫原因。多半是 Secrets 沒填或填錯。
 
 **同事說打不開**
-Streamlit Cloud 免費版的 App 太久沒人用會睡著，第一個人打開要等 30 秒左右喚醒。要避免的話得升級付費方案。
-
-**有人用同一個名字**
-排行榜是用名字認人的，同名會被當成同一個人，只留最好的成績。讓大家名字加個部門或編號就好。
+Streamlit Cloud 免費版太久沒人用會睡著，第一個開的人要等 30 秒左右。
 
 ---
 
-## 安全性說明
+## 提醒
 
-- 程式裡放的 `anon` 金鑰是設計上就要公開給瀏覽器用的，外洩沒關係
-- 資料庫只開放「讀取」和「新增一筆」，**沒有開放修改和刪除**，所以沒有人能改掉或洗掉別人的成績
-- 資料表有檢查條件，步數、時間、名字長度不合理的會被擋下來
-- 這裡面沒有任何客戶資料，只有名字和成績
+這個網址是公開的，拿到連結的人都看得到這七張照片和名字。發到內部群組沒問題，但發之前記得跟七位同仁說一聲。
